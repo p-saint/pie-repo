@@ -1,20 +1,28 @@
 # pie-repo
 PIE Cartographie Aéroportuaire
 
+Nous décrivons ici le fichier GeoJSON.
 
-Caractérisations des 3 features à détecter par 3 Id (ou classe, nom fonctionnel de la feature dans le GeoJSON), chaque feature a une géométrie associée (uniquement 3 type de géométries : POINT/LINE/POLYGON).
+Les 3 features que nous cherchons à identifier se caractérisent par un Id (ou classe, nom fonctionnel de la feature dans le GeoJSON):
+- Apron
+- Runways
+- Service Roads
 
-Liste des features :
-** Apron
-Attributs : 
+De plus, chaque feature a une géométrie associée : 
+- Polygon
+- Point
+- LineString
+
+Chaque feature a une liste d'attributs :
+## Apron 
 -          Idapron : nom de l’apron
 -          Status : usable or not usable (vient de l’AIP)
 -          PCN : chaine de caractère (par ex « PCN91/F/A/W/T »)
 
-** Runways
-Divisés en plusieurs éléments, chaque élément a les attributs :
+## Runways
+Les Runways sont subdivisés en plusieurs éléments.
 
-*         Runway element :
+Runway.runwayelement :
 -          Idrwy : ID
 -          PCN
 -          Width : largeur calculé automatiquement avec la géométrie capturée
@@ -23,25 +31,26 @@ Divisés en plusieurs éléments, chaque élément a les attributs :
 -          Status
 
 
-*         Runway Displaced Area :
+
+Runway.runwaydisplacedarea :
 -          Id
 -          Surftype
 -          Status
 -          DisplacementLength : mesuré avec la géométrie capturée
 
 
-*         Stopway :
+Stopway :
 -          Id
 -          Surftype
 -          Status
 -          StopwaytLength : mesuré avec la géométrie capturée
 
-*         Runway Intersection :
+Runway Intersection :
 -          Idrwi : ID
 -          Surftype
 -          PCN
 
-*         Runway Threshold :
+Runway.runwaythreshold :
 -          Idthr
 -          Thrtype : displaced or not
 -          Status
@@ -55,15 +64,17 @@ Divisés en plusieurs éléments, chaque élément a les attributs :
 -          Cat : catégorie de l’ILS lié à ce thr
 -          ROPS landing length : égale à la valeur de la measuredLda sauf si demande de mesure particulière d’un client.
 
-*         Painted Centerline :
+Painted Centerline :
 -          Idrwy
 
-*         Runway Marking
+Runway.runwaymarking:
 -          Idrwy
 
+Runway.runwayexitline
 
-** Service Roads
-Attributs:
+Runway.runwayshoulder
+
+## Service Roads
 -          Idbase : toujours capturés en $UNK
 -          Featbase : toujours capturé en « None »
 
