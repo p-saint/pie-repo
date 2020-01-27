@@ -9,7 +9,7 @@ from PIL import Image
 
 
 class BasicDataset(Dataset):
-    def __init__(self, imgs_dir, masks_dir, scale):
+    def __init__(self, imgs_dir, masks_dir, scale=1):
         self.imgs_dir = imgs_dir
         self.masks_dir = masks_dir
         self.scale = scale
@@ -39,18 +39,25 @@ class BasicDataset(Dataset):
         img_trans = img_nd.transpose((2, 0, 1))
         if img_trans.max() > 1:
             img_trans = img_trans / 255
-        print(img_trans)
+
         return img_trans
 
     def __getitem__(self, i):
         idx = self.ids[i]
-        mask_file = "/Users/salimbaddou/PIE/Pytorch-UNet/" + self.masks_dir + idx + '.png'
+        mask_file = "/Users/salimbaddou/PIE/Pytorch-UNet/" + self.masks_dir + idx + '.jpg'
 
-        img_file = "/Users/salimbaddou/PIE/Pytorch-UNet/" + self.imgs_dir + idx + '.png'
+        img_file = "/Users/salimbaddou/PIE/Pytorch-UNet/" + self.imgs_dir + idx + '.jpg'
+        print(mask_file)
 
 
         mask = Image.open(mask_file)
+        print(mask.size)
+
         img = Image.open(img_file)
+        print(img.size)
+
+
+        print(img.size)
 
         assert img.size == mask.size, \
             f'Image and mask {idx} should be the same size, but are {img.size} and {mask.size}'
@@ -59,70 +66,3 @@ class BasicDataset(Dataset):
         mask = self.preprocess(mask)
 
         return {'image': torch.from_numpy(img), 'mask': torch.from_numpy(mask)}
-
-
-
-class Dataset2(Dataset):
-
-    def __init__(self, csv_file, root_dir, transform=None):
-        """
-        Args:
-
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-        self.landmarks_frame = pd.read_csv(csv_file)
-        self.root_dir = root_dir
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.ids)
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        img_name = os.path.join(self.root_dir,
-                                self.landmarks_frame.iloc[idx, 0])
-        image = io.imread(img_name)
-        landmarks = self.landmarks_frame.iloc[idx, 1:]
-        landmarks = np.array([landmarks])
-        landmarks = landmarks.astype('float').reshape(-1, 2)
-        sample = {'image': image, 'landmarks': landmarks}
-
-        if self.transform:
-            sample = self.transform(sample)
-
-        return sample
-
-class Dataset2(Dataset):
-
-    def __init__(self,imgs_dir, masks_dir, scale):
-        self.imgs_dir = imgs_dir
-        self.masks_dir = masks_dir
-        self.scale = scale
-        """
-        Args:
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-
-    def __len__(self):
-        return len(self.landmarks_frame)
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        img_name = os.path.join(self.root_dir,
-                                self.landmarks_frame.iloc[idx, 0])
-        image = io.imread(img_name)
-        landmarks = self.landmarks_frame.iloc[idx, 1:]
-        landmarks = np.array([landmarks])
-        landmarks = landmarks.astype('float').reshape(-1, 2)
-        sample = {'image': image, 'landmarks': landmarks}
-
-        if self.transform:
-            sample = self.transform(sample)
-
-        return sample
