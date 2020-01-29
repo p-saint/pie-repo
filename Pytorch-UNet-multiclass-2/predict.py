@@ -73,6 +73,8 @@ def get_args():
                         help="Scale factor for the input images",
                         default=0.5)
 
+    
+
     return parser.parse_args()
 
 
@@ -129,7 +131,7 @@ if __name__ == "__main__":
                            scale_factor=args.scale,
                            out_threshold=args.mask_threshold,
                            device=device)
-        print(mask.shape)
+
         mask = np.argmax(mask, axis=0)
         if not args.no_save:
             out_fn = out_files[i]

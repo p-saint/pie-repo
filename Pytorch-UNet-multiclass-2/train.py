@@ -54,12 +54,15 @@ def train_net(net,
     ''')
 
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8)
-    if net.n_classes > 1:
-        criterion = nn.CrossEntropyLoss()
-    else:
-        criterion = nn.BCEWithLogitsLoss()
-
     dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+    class_weights = torch.FloatTensor([1] + [args.weight]*(net.n_classes-1)).to(device)
+
+    if net.n_classes > 1:
+        criterion = nn.CrossEntropyLoss(weight = class_weights)
+    else:
+        criterion = nn.BCEWithLogitsLoss(weight = class_weights)
+
+
 
     for epoch in range(epochs):
         net.train()
@@ -82,19 +85,21 @@ def train_net(net,
 
                 masks_pred = net(imgs)
 
-                true_masks = torch.argmax(true_masks, dim=1)
 
-                #print("mask_pred: ",masks_pred.shape)
-                #print("mask_true: ",true_masks.shape)
-
-                #print("mask_pred: ",masks_pred.dtype)
-                #print("mask_true: ",true_masks.dtype)
+                true_masks = true_masks.view(true_masks.shape[0],true_masks.shape[2],true_masks.shape[3])
+                #
+                # print("mask_pred: ",masks_pred.shape)
+                # print("mask_true: ",true_masks.shape)
+                #
+                # print("mask_pred: ",masks_pred.dtype)
+                # print("mask_true: ",true_masks.dtype)
 
 
 
 
                 loss = criterion(masks_pred, true_masks)
                 epoch_loss += loss.item()
+
                 writer.add_scalar('Loss/train', loss.item(), global_step)
 
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
@@ -151,6 +156,8 @@ def get_args():
                         help='Downscaling factor of the images')
     parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
+    parser.add_argument('--weight','-w',type=float,dest='weight',
+                        help="weight of labels (background is one)",default=10)
 
     return parser.parse_args()
 
