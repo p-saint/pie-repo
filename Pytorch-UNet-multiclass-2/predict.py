@@ -93,21 +93,19 @@ def get_output_filenames(args):
     return out_files
 
 
-def mask_to_image(mask):
-    return Image.fromarray((mask * 255).astype(np.uint8))
+def mask_to_image(mask,n_classes):
+    if n_classes > 2:
+        return Image.fromarray(((mask)*int(255/(n_classes - 1))).astype(np.uint8))
+    else:
+        return Image.fromarray((mask * 255).astype(np.uint8))
 
 
 if __name__ == "__main__":
     args = get_args()
     in_files = args.input
     out_files = get_output_filenames(args)
-
-    #model = "checkpoints/CP_epoch5.pth"
-    #in_files = "VHHH356.png"
-    #out_files = "output.jpg"
-
-
-    net = UNet(n_channels=3, n_classes=4)
+    n_classes = 4
+    net = UNet(n_channels=3, n_classes=n_classes)
 
     logging.info("Loading model {}".format(args.model))
 
@@ -135,7 +133,7 @@ if __name__ == "__main__":
         mask = np.argmax(mask, axis=0)
         if not args.no_save:
             out_fn = out_files[i]
-            result = mask_to_image(mask)
+            result = mask_to_image(mask,n_classes)
             result.save(out_files[i])
 
             logging.info("Mask saved to {}".format(out_files[i]))

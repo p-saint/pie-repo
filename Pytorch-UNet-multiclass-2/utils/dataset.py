@@ -43,10 +43,33 @@ class BasicDataset(Dataset):
         #     img_trans = img_trans / 255
         return img_trans
 
+
+    @classmethod
+    def preprocess_mask(cls, pil_img, scale):
+        w, h = pil_img.size
+        newW, newH = int(scale * w), int(scale * h)
+        assert newW > 0 and newH > 0, 'Scale is too small'
+        pil_img = pil_img.resize((newW, newH))
+
+        img_nd = np.array(pil_img)
+        img_nd = img_nd[:,:,np.newaxis]
+        img_trans = img_nd.transpose((2, 0, 1))
+        # print('a')
+        # if len(img_nd.shape) == 2:
+        #     print('b')
+        #     img_nd = np.expand_dims(img_nd, axis=2)
+        # print('c')
+        # # HWC to CHW
+        # img_trans = img_nd.transpose((2, 0, 1))
+        # if img_trans.max() > 1:
+        #     print('d')
+        #     img_trans = img_trans / 255
+        return img_trans
+
     def __getitem__(self, i):
         idx = self.ids[i]
-        mask_file = glob(self.masks_dir + idx + '*')
-        img_file = glob(self.imgs_dir + idx + '*')
+        mask_file = glob(self.masks_dir + idx + '.png')
+        img_file = glob(self.imgs_dir + idx + '.png')
 
 
         assert len(mask_file) == 1, \
@@ -60,8 +83,6 @@ class BasicDataset(Dataset):
             f'Image and mask {idx} should be the same size, but are {img.size} and {mask.size}'
 
         img = self.preprocess(img, self.scale)
-        mask = self.preprocess(mask, self.scale)
+        mask = self.preprocess_mask(mask, self.scale)
 
         return {'image': torch.from_numpy(img), 'mask': torch.from_numpy(mask)}
-
-

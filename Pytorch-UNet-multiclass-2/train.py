@@ -105,9 +105,9 @@ def train_net(net,
 
                 pbar.update(imgs.shape[0])
                 global_step += 1
-                print(global_step)
-                print(len(dataset))
-                print(batch_size)
+                # print(global_step)
+                # print(len(dataset))
+                # print(batch_size)
                 if global_step % (len(dataset) // (10 * batch_size)) == 0:
                     val_score = eval_net(net, val_loader, device, n_val)
                     if net.n_classes > 1:
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=4, n_classes=4)
+    net = UNet(n_channels=3, n_classes=4)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'
@@ -186,8 +186,8 @@ if __name__ == '__main__':
     try:
         train_net(net=net,
                   epochs=args.epochs,
-                  batch_size=8,
-                  lr=0.01,
+                  batch_size=args.batchsize,
+                  lr=args.lr,
                   device=device,
                   img_scale=args.scale,
                   val_percent=0.1)
