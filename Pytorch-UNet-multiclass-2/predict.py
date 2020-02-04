@@ -46,7 +46,8 @@ def predict_img(net,
         probs = tf(probs.cpu())
         full_mask = probs.squeeze().cpu().numpy()
 
-    return full_mask > out_threshold
+    # return full_mask > out_threshold
+    return full_mask
 
 
 def get_args():
@@ -73,7 +74,7 @@ def get_args():
                         help="Scale factor for the input images",
                         default=0.5)
 
-    
+
 
     return parser.parse_args()
 
@@ -111,7 +112,8 @@ if __name__ == "__main__":
 
     logging.info("Loading model {}".format(args.model))
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
     logging.info(f'Using device {device}')
     net.to(device=device)
     print(args.model)
@@ -131,7 +133,6 @@ if __name__ == "__main__":
                            scale_factor=args.scale,
                            out_threshold=args.mask_threshold,
                            device=device)
-
         mask = np.argmax(mask, axis=0)
         if not args.no_save:
             out_fn = out_files[i]

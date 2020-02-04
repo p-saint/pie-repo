@@ -20,15 +20,16 @@ def eval_net(net, loader, device, n_val):
             imgs = imgs.to(device=device, dtype=torch.float32)
             mask_type = torch.float32 if net.n_classes == 1 else torch.long
             true_masks = true_masks.to(device=device, dtype=mask_type)
-            true_masks = torch.argmax(true_masks, dim=1)
+            true_masks = true_masks.view(true_masks.shape[0],true_masks.shape[2],true_masks.shape[3])
             class_weights = torch.FloatTensor([1] + [1]*(net.n_classes-1)).to(device)
             mask_pred = net(imgs)
 
             for true_mask, pred in zip(true_masks, mask_pred):
-                pred = (pred > 0.5).float()
                 if net.n_classes > 1:
                     tot += F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0),weight = class_weights).item()
+
                 else:
+                    pred = (pred > 0.5).float()
                     tot += dice_coeff(pred, true_mask.squeeze(dim=1)).item()
             pbar.update(imgs.shape[0])
 
