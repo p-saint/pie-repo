@@ -30,7 +30,6 @@ def train_net(net,
               save_cp=True,
               img_scale=0.5):
 
-    print(val_percent)
 
     dataset = BasicDataset(dir_img, dir_mask, img_scale)
     n_val = int(len(dataset) * val_percent)
@@ -114,7 +113,7 @@ def train_net(net,
                 # print(len(dataset))
                 # print(batch_size)
                 if global_step % (len(dataset) // (10 * batch_size)) == 0:
-                    val_score = eval_net(net, val_loader, device, n_val)
+                    val_score = eval_net(net, val_loader, device, n_val, weight = args.weight)
                     if net.n_classes > 1:
                         logging.info('Validation cross entropy: {}'.format(val_score))
                         writer.add_scalar('Loss/test', val_score, global_step)
