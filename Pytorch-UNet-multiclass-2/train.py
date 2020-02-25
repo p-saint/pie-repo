@@ -15,9 +15,7 @@ from unet import UNet
 from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
-
-dir_img = 'data/imgs/'
-dir_mask = 'data/masks/'
+data_dir = '/data/data'
 dir_checkpoint = 'checkpoints/'
 
 
@@ -29,9 +27,11 @@ def train_net(net,
               val_percent=0.1,
               save_cp=True,
               img_scale=0.5,
+              data_dir = data_dir,
               config = None):
 
-
+    dir_img = data_dir + 'imgs/'
+    dir_mask = data_dir + 'masks/'
     dataset = BasicDataset(dir_img, dir_mask, img_scale)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
@@ -163,6 +163,9 @@ def get_args():
     parser.add_argument('--weight','-w',type=float,dest='weight',
                         help="weight of labels (background is one)",default=1)
 
+    parser.add_argument('--data_dir','-d',dest='data_dir',
+                        help='path to data used for training',default = data_dir)
+
     return parser.parse_args()
 
 
@@ -190,7 +193,7 @@ if __name__ == '__main__':
         logging.info(f'Model loaded from {args.load}')
 
     net.to(device=device)
-    print(net)
+    print(args.data_dir)
     # faster convolutions, but more memory
     # cudnn.benchmark = True
 
@@ -202,6 +205,7 @@ if __name__ == '__main__':
                   device=device,
                   img_scale=args.scale,
                   val_percent=args.val,
+                  data_dir = args.data_dir,
                   config = args)
 
     except KeyboardInterrupt:
