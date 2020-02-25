@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 import sys
-
+import json
 import numpy as np
 import torch
 import torch.nn as nn
@@ -28,7 +28,8 @@ def train_net(net,
               lr=0.01,
               val_percent=0.1,
               save_cp=True,
-              img_scale=0.5):
+              img_scale=0.5,
+              config = None):
 
 
     dataset = BasicDataset(dir_img, dir_mask, img_scale)
@@ -39,6 +40,10 @@ def train_net(net,
     val_loader = DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=8)
 
     writer = SummaryWriter(comment=f'LR_{lr}_BS_{batch_size}_SCALE_{img_scale}')
+    if config:
+        with open(os.path.join(writer.log_dir,'config.json'),'w') as configFile:
+            configFile.write(json.dumps(config.__dict__))
+
     global_step = 0
 
     logging.info(f'''Starting training:
@@ -153,7 +158,7 @@ def get_args():
                         help='Load model from a .pth file')
     parser.add_argument('-s', '--scale', dest='scale', type=float, default=0.5,
                         help='Downscaling factor of the images')
-    parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
+    parser.add_argument('-v', '--validation', dest='val', type=float, default=0.1,
                         help='Percent of the data that is used as validation (0-100)')
     parser.add_argument('--weight','-w',type=float,dest='weight',
                         help="weight of labels (background is one)",default=1)
@@ -178,7 +183,6 @@ if __name__ == '__main__':
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'
                  f'\t{"Bilinear" if net.bilinear else "Dilated conv"} upscaling')
-
     if args.load:
         net.load_state_dict(
             torch.load(args.load, map_location=device)
@@ -186,6 +190,7 @@ if __name__ == '__main__':
         logging.info(f'Model loaded from {args.load}')
 
     net.to(device=device)
+    print(net)
     # faster convolutions, but more memory
     # cudnn.benchmark = True
 
@@ -196,7 +201,8 @@ if __name__ == '__main__':
                   lr=args.lr,
                   device=device,
                   img_scale=args.scale,
-                  val_percent=0.1)
+                  val_percent=args.val,
+                  config = args)
 
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
