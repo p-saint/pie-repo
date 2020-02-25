@@ -162,9 +162,10 @@ def get_args():
                         help='Percent of the data that is used as validation (0-100)')
     parser.add_argument('--weight','-w',type=float,dest='weight',
                         help="weight of labels (background is one)",default=1)
-
     parser.add_argument('--data_dir','-d',dest='data_dir',
                         help='path to data used for training',default = data_dir)
+    parser.add_argument('--n_classes','-nc',required = True,dest='n_classes',
+                        help='number of classes')
 
     return parser.parse_args()
 
@@ -181,7 +182,7 @@ if __name__ == '__main__':
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=3, n_classes=4)
+    net = UNet(n_channels=3, n_classes=args.n_classes)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'
