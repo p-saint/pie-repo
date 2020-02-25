@@ -7,6 +7,7 @@ Les 3 features que nous cherchons à identifier se caractérisent par un Id (ou 
 - Apron
 - Runways
 - Service Roads
+- Taxiway
 
 De plus, chaque feature a une géométrie associée : 
 - Polygon
@@ -77,6 +78,11 @@ Runway.runwayshoulder
 ## Service Roads
 -          Idbase : toujours capturés en $UNK
 -          Featbase : toujours capturé en « None »
+
+## Taxiway
+Taxiway.taxiwayshoulder
+Taxiway.taxiwayelement
+Taxiway.taxiwayholdingposition
 
 
 Note sur la vérification de l'identification des features : la nature de chaque élément est vérifiée avec l'image de base, plus les charts et informations disponibles dans l'AIP (documents officiels liés à l'aéroport fournis par l'AIS). Pas de capture d'élément si la nature de l'élément n'est pas certaine à 100%.
