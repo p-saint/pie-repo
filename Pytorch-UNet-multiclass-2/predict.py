@@ -73,7 +73,8 @@ def get_args():
     parser.add_argument('--scale', '-s', type=float,
                         help="Scale factor for the input images",
                         default=0.5)
-
+    parser.add_argument('--n_classes','-nc',required = True,dest='n_classes',
+                        help='number of classes')
 
 
     return parser.parse_args()
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     args = get_args()
     in_files = args.input
     out_files = get_output_filenames(args)
-    n_classes = 4
+    n_classes = args.n_classes
     net = UNet(n_channels=3, n_classes=n_classes)
 
     logging.info("Loading model {}".format(args.model))
