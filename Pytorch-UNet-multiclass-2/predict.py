@@ -73,7 +73,7 @@ def get_args():
     parser.add_argument('--scale', '-s', type=float,
                         help="Scale factor for the input images",
                         default=0.5)
-    parser.add_argument('--n_classes','-nc',required = True,dest='n_classes',
+    parser.add_argument('--n_classes','-nc',type=int,required = True,dest='n_classes',
                         help='number of classes')
 
 
@@ -119,8 +119,6 @@ if __name__ == "__main__":
     net.to(device=device)
     print(args.model)
     net.load_state_dict(torch.load(args.model, map_location=device))
-
-
     logging.info("Model loaded !")
 
     for i, fn in enumerate(in_files):

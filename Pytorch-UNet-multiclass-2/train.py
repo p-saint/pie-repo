@@ -14,6 +14,7 @@ from unet import UNet
 
 from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
+from utils.frequencies import count_occurences
 from torch.utils.data import DataLoader, random_split
 data_dir = '/data/data'
 dir_checkpoint = 'checkpoints/'
@@ -59,7 +60,22 @@ def train_net(net,
 
     optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=1e-8)
     dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
-    class_weights = torch.FloatTensor([1] + [args.weight]*(net.n_classes-1)).to(device)
+
+    if args.weighted:
+        try:
+            with open(os.path.join(data_dir,'frequencies.json'),'r') as freqFile:
+                class_weights = torch.FloatTensor([1/f for _,f in json.load(freqFile).items()]).to(device)
+        except FileNotFoundError:
+                print('Computing adapted class weights...')
+                frequencies = count_occurences(data_dir,net.n_classes)
+                with open(os.path.join(data_dir,'frequencies.json'),'w') as freqFile:
+                    freqFile.write(json.dumps(frequencies))
+                class_weights = torch.FloatTensor([1/f for _,f in frequencies.items()]).to(device)
+
+
+
+    else:
+        class_weights = torch.FloatTensor([1]*net.n_classes)
 
     if net.n_classes > 1:
         criterion = nn.CrossEntropyLoss(weight = class_weights)
@@ -118,7 +134,7 @@ def train_net(net,
                 # print(len(dataset))
                 # print(batch_size)
                 if global_step % (len(dataset) // (10 * batch_size)) == 0:
-                    val_score = eval_net(net, val_loader, device, n_val, weight = args.weight)
+                    val_score = eval_net(net, val_loader, device, n_val, class_weights)
                     if net.n_classes > 1:
                         logging.info('Validation cross entropy: {}'.format(val_score))
                         writer.add_scalar('Loss/test', val_score, global_step)
@@ -160,11 +176,11 @@ def get_args():
                         help='Downscaling factor of the images')
     parser.add_argument('-v', '--validation', dest='val', type=float, default=0.1,
                         help='Percent of the data that is used as validation (0-100)')
-    parser.add_argument('--weight','-w',type=float,dest='weight',
-                        help="weight of labels (background is one)",default=1)
+    parser.add_argument('--weighted','-w',action='store_true',dest='weighted',
+                        help='use of weighted cross entropy loss',default=False)
     parser.add_argument('--data_dir','-d',dest='data_dir',
                         help='path to data used for training',default = data_dir)
-    parser.add_argument('--n_classes','-nc',required = True,dest='n_classes',
+    parser.add_argument('--n_classes','-nc',type=int,required = True,dest='n_classes',
                         help='number of classes')
 
     return parser.parse_args()
@@ -182,7 +198,7 @@ if __name__ == '__main__':
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=3, n_classes=int(args.n_classes))
+    net = UNet(n_channels=3, n_classes=args.n_classes)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'
@@ -194,7 +210,6 @@ if __name__ == '__main__':
         logging.info(f'Model loaded from {args.load}')
 
     net.to(device=device)
-    print(args.data_dir)
     # faster convolutions, but more memory
     # cudnn.benchmark = True
 
