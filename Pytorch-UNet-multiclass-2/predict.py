@@ -27,10 +27,10 @@ def predict_img(net,
     with torch.no_grad():
         output = net(img)
 
-        if net.n_classes > 1:
-            probs = F.softmax(output, dim=1)
-        else:
-            probs = torch.sigmoid(output)
+        #if net.n_classes > 1:
+        probs = F.softmax(output, dim=1)
+        # else:
+        #     probs = torch.sigmoid(output)
 
         probs = probs.squeeze(0)
 
@@ -43,7 +43,7 @@ def predict_img(net,
         )
 
         probs = tf(probs.cpu())
-        full_mask = probs.squeeze().cpu().numpy()   
+        full_mask = probs.squeeze().cpu().numpy()
 
     # return full_mask > out_threshold
     return full_mask
