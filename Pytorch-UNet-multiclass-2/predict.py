@@ -21,7 +21,6 @@ def predict_img(net,
     net.eval()
 
     img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor))
-
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
@@ -44,7 +43,7 @@ def predict_img(net,
         )
 
         probs = tf(probs.cpu())
-        full_mask = probs.squeeze().cpu().numpy()
+        full_mask = probs.squeeze().cpu().numpy()   
 
     # return full_mask > out_threshold
     return full_mask

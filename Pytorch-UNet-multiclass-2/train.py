@@ -80,7 +80,7 @@ def train_net(net,
     if net.n_classes > 1:
         criterion = nn.CrossEntropyLoss(weight = class_weights)
     else:
-        criterion = nn.BCEWithLogitsLoss(weight = class_weights)
+        criterion = nn.BCEWithLogitsLoss(pos_weight = class_weights[1])
 
 
 
@@ -104,9 +104,8 @@ def train_net(net,
 
 
                 masks_pred = net(imgs)
-
-
-                true_masks = true_masks.view(true_masks.shape[0],true_masks.shape[2],true_masks.shape[3])
+                if net.n_classes > 1:
+                    true_masks = true_masks.view(true_masks.shape[0],true_masks.shape[2],true_masks.shape[3])
                 #
                 #print("mask_pred: ",masks_pred.shape)
                 #print("mask_true: ",true_masks.shape)
