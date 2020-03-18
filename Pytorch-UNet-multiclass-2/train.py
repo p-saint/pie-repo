@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
 from utils.frequencies import count_occurences
 from torch.utils.data import DataLoader, random_split
-data_dir = '/data/data'
+data_dir = '/data/data/'
 dir_checkpoint = 'checkpoints/'
 
 
@@ -37,10 +37,17 @@ def train_net(net,
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
+    train_ids = list(np.array(dataset.ids)[train.indices])
+    val_ids = list(np.array(dataset.ids)[val.indices])
+
     train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=8)
     val_loader = DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=8)
 
     writer = SummaryWriter(comment=f'LR_{lr}_BS_{batch_size}_SCALE_{img_scale}')
+
+    with open(os.path.join(writer.log_dir,'train_val.json'),'w') as splitFile:
+        splitFile.write(json.dumps({'train': train_ids,
+                                    'val': val_ids}))
     if config:
         with open(os.path.join(writer.log_dir,'config.json'),'w') as configFile:
             configFile.write(json.dumps(config.__dict__))
@@ -61,7 +68,7 @@ def train_net(net,
     optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=1e-8)
     dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
-    if args.weighted:
+    if config.weighted:
         try:
             with open(os.path.join(data_dir,'frequencies.json'),'r') as freqFile:
                 class_weights = torch.FloatTensor([1/f for _,f in json.load(freqFile).items()]).to(device)
@@ -75,13 +82,10 @@ def train_net(net,
 
 
     else:
-        class_weights = torch.FloatTensor([1]*net.n_classes)
+        class_weights = torch.FloatTensor([1]*net.n_classes).to(device)
 
-    # if net.n_classes > 1:
-    #     criterion = nn.CrossEntropyLoss(weight = class_weights)
-    # else:
-    #     criterion = nn.BCEWithLogitsLoss(pos_weight = class_weights[1])
-     criterion = nn.CrossEntropyLoss(weight = class_weights)
+
+    criterion = nn.CrossEntropyLoss(weight = class_weights)
 
 
     for epoch in range(epochs):
@@ -105,15 +109,6 @@ def train_net(net,
 
                 masks_pred = net(imgs)
                 true_masks = true_masks.view(true_masks.shape[0],true_masks.shape[2],true_masks.shape[3])
-                #
-                #print("mask_pred: ",masks_pred.shape)
-                #print("mask_true: ",true_masks.shape)
-                #
-                # print("mask_pred: ",masks_pred.dtype)
-                # print("mask_true: ",true_masks.dtype)
-
-
-
 
                 loss = criterion(masks_pred, true_masks)
 
@@ -129,23 +124,12 @@ def train_net(net,
 
                 pbar.update(imgs.shape[0])
                 global_step += 1
-                # print(global_step)
-                # print(len(dataset))
-                # print(batch_size)
+
                 if global_step % (len(dataset) // (10 * batch_size)) == 0:
                     val_score = eval_net(net, val_loader, device, n_val, class_weights)
-                    #if net.n_classes > 1:
                     logging.info('Validation cross entropy: {}'.format(val_score))
                     writer.add_scalar('Loss/test', val_score, global_step)
 
-                    # else:
-                    #     logging.info('Validation Dice Coeff: {}'.format(val_score))
-                    #     writer.add_scalar('Dice/test', val_score, global_step)
-
-                    #writer.add_images('images', imgs, global_step)
-                    # if net.n_classes == 1:
-                    #     writer.add_images('masks/true', true_masks, global_step)
-                    #     writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
 
         if save_cp:
             try:
@@ -194,9 +178,8 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    #   - For 1 class and background, use n_classes=1
-    #   - For 2 classes, use n_classes=1
-    #   - For N > 2 classes, use n_classes=N
+    #   - For 1 class and background, use n_classes=2
+    #   - For N > 1 classes, use n_classes=N
     net = UNet(n_channels=3, n_classes=args.n_classes)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
