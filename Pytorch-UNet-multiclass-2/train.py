@@ -13,7 +13,7 @@ from eval import eval_net
 from unet import UNet
 
 from torch.utils.tensorboard import SummaryWriter
-from utils.dataset import BasicDataset
+from utils.dataset import BasicDataset,AugmentedDataset
 from utils.frequencies import count_occurences
 from torch.utils.data import DataLoader, random_split
 data_dir = '/data/data/'
