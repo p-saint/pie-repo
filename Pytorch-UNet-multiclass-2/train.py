@@ -29,11 +29,16 @@ def train_net(net,
               save_cp=True,
               img_scale=0.5,
               data_dir = data_dir,
+              weighted = False,
+              augmented = False,
               config = None):
 
     dir_img = data_dir + 'imgs/'
     dir_mask = data_dir + 'masks/'
-    dataset = BasicDataset(dir_img, dir_mask, img_scale)
+    if augmented:
+        dataset = AugmentedDataset(dir_img,dir_mask,img_scale)
+    else:
+        dataset = BasicDataset(dir_img, dir_mask, img_scale)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
@@ -68,7 +73,7 @@ def train_net(net,
     optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=1e-8)
     dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
-    if config.weighted:
+    if weighted:
         try:
             with open(os.path.join(data_dir,'frequencies.json'),'r') as freqFile:
                 class_weights = torch.FloatTensor([1/f for _,f in json.load(freqFile).items()]).to(device)
@@ -165,6 +170,8 @@ def get_args():
                         help='path to data used for training',default = data_dir)
     parser.add_argument('--n_classes','-nc',type=int,required = True,dest='n_classes',
                         help='number of classes')
+    parser.add_argument('--augmented','-a',action='store_true',dest='augmented',
+                        help='use data augmentation',default=False)
 
     return parser.parse_args()
 
@@ -204,6 +211,8 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val,
                   data_dir = args.data_dir,
+                  weighted = args.weighted,
+                  augmented = args.augmented,
                   config = args)
 
     except KeyboardInterrupt:

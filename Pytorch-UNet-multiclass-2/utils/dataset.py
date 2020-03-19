@@ -5,7 +5,8 @@ from glob import glob
 import torch
 from torch.utils.data import Dataset
 import logging
-from PIL import Image
+from PIL import Image,ImageFilter
+import random
 
 
 class BasicDataset(Dataset):
@@ -31,16 +32,6 @@ class BasicDataset(Dataset):
 
         img_nd = np.array(pil_img)
         img_trans = img_nd.transpose((2, 0, 1))
-        # print('a')
-        # if len(img_nd.shape) == 2:
-        #     print('b')
-        #     img_nd = np.expand_dims(img_nd, axis=2)
-        # print('c')
-        # # HWC to CHW
-        # img_trans = img_nd.transpose((2, 0, 1))
-        # if img_trans.max() > 1:
-        #     print('d')
-        #     img_trans = img_trans / 255
         return img_trans
 
 
@@ -54,16 +45,6 @@ class BasicDataset(Dataset):
         img_nd = np.array(pil_img)
         img_nd = img_nd[:,:,np.newaxis]
         img_trans = img_nd.transpose((2, 0, 1))
-        # print('a')
-        # if len(img_nd.shape) == 2:
-        #     print('b')
-        #     img_nd = np.expand_dims(img_nd, axis=2)
-        # print('c')
-        # # HWC to CHW
-        # img_trans = img_nd.transpose((2, 0, 1))
-        # if img_trans.max() > 1:
-        #     print('d')
-        #     img_trans = img_trans / 255
         return img_trans
 
     def __getitem__(self, i):
@@ -84,5 +65,72 @@ class BasicDataset(Dataset):
 
         img = self.preprocess(img, self.scale)
         mask = self.preprocess_mask(mask, self.scale)
+
+        return {'image': torch.from_numpy(img), 'mask': torch.from_numpy(mask)}
+
+
+class AugmentedDataset(Dataset):
+    def __init__(self, imgs_dir, masks_dir, scale=1):
+        self.imgs_dir = imgs_dir
+        self.masks_dir = masks_dir
+        self.scale = scale
+        assert 0 < scale <= 1, 'Scale must be between 0 and 1'
+
+        self.ids = [splitext(file)[0] for file in listdir(imgs_dir)
+                    if not file.startswith('.')]
+        logging.info(f'Creating dataset with {len(self.ids)} examples')
+
+    def __len__(self):
+        return len(self.ids)
+
+    @classmethod
+    def preprocess_aug(self, pil_img, pil_mask,scale):
+        w, h = pil_img.size
+        newW, newH = int(scale * w), int(scale * h)
+        assert newW > 0 and newH > 0, 'Scale is too small'
+        pil_img = pil_img.resize((newW, newH))
+        pil_mask = pil_mask.resize((newW, newH))
+
+
+        # random mirror
+        if random.random() < 0.5:
+            print('FLIP')
+            pil_img = pil_img.transpose(Image.FLIP_LEFT_RIGHT)
+            pil_mask = pil_mask.transpose(Image.FLIP_LEFT_RIGHT)
+
+
+
+        # gaussian blur as in PSP
+        if random.random() < 0.5:
+            print('BLUR')
+            pil_img = pil_img.filter(ImageFilter.GaussianBlur(
+                radius=random.random()))
+        # final transform
+        img_nd = np.array(pil_img)
+        img_trans = img_nd.transpose((2, 0, 1))
+
+        mask_nd = np.array(pil_mask)
+        mask_nd = mask_nd[:,:,np.newaxis]
+        mask_trans = mask_nd.transpose((2, 0, 1))
+        return img_trans, mask_trans
+
+
+    def __getitem__(self, i):
+        idx = self.ids[i]
+        mask_file = glob(self.masks_dir + idx + '.png')
+        img_file = glob(self.imgs_dir + idx + '.png')
+
+
+        assert len(mask_file) == 1, \
+            f'Either no mask or multiple masks found for the ID {idx}: {mask_file}'
+        assert len(img_file) == 1, \
+            f'Either no image or multiple images found for the ID {idx}: {img_file}'
+        mask = Image.open(mask_file[0])
+        img = Image.open(img_file[0])
+
+        assert img.size == mask.size, \
+            f'Image and mask {idx} should be the same size, but are {img.size} and {mask.size}'
+
+        img, mask = self.preprocess_aug(img,mask,self.scale)
 
         return {'image': torch.from_numpy(img), 'mask': torch.from_numpy(mask)}
