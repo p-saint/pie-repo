@@ -94,7 +94,6 @@ class AugmentedDataset(Dataset):
 
         # random mirror
         if random.random() < 0.5:
-            print('FLIP')
             pil_img = pil_img.transpose(Image.FLIP_LEFT_RIGHT)
             pil_mask = pil_mask.transpose(Image.FLIP_LEFT_RIGHT)
 
@@ -102,7 +101,6 @@ class AugmentedDataset(Dataset):
 
         # gaussian blur as in PSP
         if random.random() < 0.5:
-            print('BLUR')
             pil_img = pil_img.filter(ImageFilter.GaussianBlur(
                 radius=random.random()))
         # final transform
